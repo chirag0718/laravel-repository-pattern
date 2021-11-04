@@ -11,7 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use Symfony\Component\HttpFoundation\Response;
 
 class TodoController extends Controller
 {
@@ -28,7 +28,7 @@ class TodoController extends Controller
      */
     public function index()
     {
-        $todos =  $this->todoRepo->getAll();
+        $todos = $this->todoRepo->getAll();
         return view("todo.index", compact(['todos', $todos]));
     }
 
@@ -66,13 +66,18 @@ class TodoController extends Controller
 
     /**
      * Display the specified resource.
-     *D
-     * @param Todo $todo
-     * @return void
+     * @param $id
+     * @return JsonResponse
      */
-    public function show(Todo $todo)
+    public function show($id): JsonResponse
     {
-        //
+        try {
+            $todo = $this->todoRepo->findById((int) $id);
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Something went wrong', 'page' => '/todo'],Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json(['html' => $todo->task_name], Response::HTTP_OK);
     }
 
     /**
@@ -87,25 +92,42 @@ class TodoController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
-     *
      * @param Request $request
-     * @param Todo $todo
-     * @return void
+     * @return JsonResponse
      */
-    public function update(Request $request, Todo $todo)
+    public function update(Request $request): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'task_name' => ['required', 'string'],
+            'edit_id' => ['integer', 'required']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->all()]);
+        }
+
+
+        try {
+            $this->todoRepo->upserts($request, (int)$request->get('edit_id'));
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Something went wrong', 'page' => '/todo']);
+        }
+        return response()->json(['message' => 'Task is updated', 'page' => '/todo']);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Todo $todo
-     * @return void
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function destroy(Todo $todo)
+    public function destroy(Request $request): JsonResponse
     {
-        //
+        try {
+            $todo = Todo::findOrFail((int)$request->only('delete_id'));
+            $todo->delete();
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Something went wrong', 'page' => '/todo']);
+        }
+        return response()->json(['message' => 'Task is deleted', 'page' => '/todo']);
     }
 }

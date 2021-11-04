@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Repository\BaseRepository;
 use App\Repository\BaseRepositoryInterface;
 use App\Repository\TodoRepository;
 use App\Repository\TodoRepositoryInterface;

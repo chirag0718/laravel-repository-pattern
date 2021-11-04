@@ -20,6 +20,12 @@ class BaseRepository implements BaseRepositoryInterface
         $this->model = $model;
     }
 
+    /**
+     * This is for insert and update function
+     * @param Request $request
+     * @param int|null $id
+     * @return bool
+     */
     public function upserts(Request $request, int $id = null): bool
     {
         $todo = new $this->model;
@@ -31,5 +37,15 @@ class BaseRepository implements BaseRepositoryInterface
             return true;
         }
         return false;
+    }
+
+    /**
+     * This is for editng the specific resource.
+     * @param int $id
+     * @return mixed
+     */
+    public function findById(int $id)
+    {
+        return $this->model::findOrFail($id);
     }
 }
